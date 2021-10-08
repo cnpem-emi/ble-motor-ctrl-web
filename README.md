@@ -1,4 +1,4 @@
-# pera
+# BLE Motor Control
 
 ## Project setup
 ```
