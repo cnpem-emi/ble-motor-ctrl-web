@@ -24,15 +24,23 @@
         or try a new device:
       </v-card-text>
 
-      
       <v-card-actions>
-        <v-btn text href="https://play.google.com/store/apps/details?id=com.android.chrome&hl=en&gl=US">
+        <v-btn
+          text
+          href="https://play.google.com/store/apps/details?id=com.android.chrome&hl=en&gl=US"
+        >
           <v-icon> {{ mdiGoogleChrome }} </v-icon> Chrome
         </v-btn>
-        <v-btn text href="https://play.google.com/store/apps/details?id=com.microsoft.emmx&hl=en&gl=US">
+        <v-btn
+          text
+          href="https://play.google.com/store/apps/details?id=com.microsoft.emmx&hl=en&gl=US"
+        >
           <v-icon> {{ mdiMicrosoftEdge }} </v-icon> Edge
         </v-btn>
-        <v-btn text href="https://play.google.com/store/apps/details?id=com.opera.browser&hl=en&gl=US">
+        <v-btn
+          text
+          href="https://play.google.com/store/apps/details?id=com.opera.browser&hl=en&gl=US"
+        >
           <v-icon> {{ mdiOpera }} </v-icon> Opera
         </v-btn>
         <v-btn text href="https://www.bromite.org/">
@@ -44,12 +52,7 @@
 </template>
 
 <script>
-import {
-  mdiGoogleChrome,
-  mdiMicrosoftEdge,
-  mdiOpera,
-  mdiWeb,
-} from "@mdi/js";
+import { mdiGoogleChrome, mdiMicrosoftEdge, mdiOpera, mdiWeb } from "@mdi/js";
 
 export default {
   props: ["unsupported"],

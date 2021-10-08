@@ -10,7 +10,9 @@ const store = new Vuex.Store({
       server: "",
       motors: [],
       service: ""
-    }
+    },
+    snackbar: false,
+    message: "",
   },
   mutations: {
     set_bluetooth(state, bluetooth) {
@@ -23,7 +25,14 @@ const store = new Vuex.Store({
         motors: [],
         service: ""
       }
-    }
+    },
+    show_snackbar(state, message) {
+      state.snackbar = true;
+      state.message = message;
+    },
+    hide_snackbar(state) {
+      state.snackbar = false;
+    },
   },
 });
 

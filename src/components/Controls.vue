@@ -3,11 +3,26 @@
     <v-card class="mx-auto" max-width="360" outlined>
       <v-list-item three-line>
         <v-list-item-content>
-          <div class="text-h5 mb-4">{{ motor.pv }}</div>
+          <v-container fluid>
+            <v-row>
+              <div class="text-h5 mb-4" style="margin-bottom: 0 !important">
+                {{ motor.pv }}
+              </div>
+              <v-spacer />
+              <v-icon v-show="motor.movn" color="blue" class="rotate_move">{{
+                mdiCogClockwise
+              }}</v-icon>
+            </v-row>
+          </v-container>
           <div class="text-overline mb-5">{{ motor.name }}</div>
           <v-container fluid>
             <v-row align="center">
-              <v-col cols="4" style="padding-right: 10px">
+              <v-col cols="1"
+                ><v-btn @click="step_motor('-')" icon class="pos_buttons"
+                  >-</v-btn
+                ></v-col
+              >
+              <v-col cols="4">
                 <v-text-field
                   label="Step"
                   placeholder="Eg.: 2.00000"
@@ -15,15 +30,20 @@
                   outlined
                   dense
                   type="number"
-                  hide-details=""
+                  hide-details
                 ></v-text-field>
               </v-col>
               <v-col cols="1"
-                ><v-btn @click="decrement" icon class="pos_buttons"
-                  >-</v-btn
+                ><v-btn
+                  @click="step_motor('')"
+                  icon
+                  class="pos_buttons"
+                  style="margin-right: 10px"
+                  >+</v-btn
                 ></v-col
               >
-              <v-col cols="6">
+              <v-spacer />
+              <v-col cols="5">
                 <v-text-field
                   label="Position"
                   placeholder="Eg.: 12.00000"
@@ -32,21 +52,17 @@
                   outlined
                   dense
                   type="number"
-                  hide-details=""
+                  hide-details
                 ></v-text-field>
               </v-col>
-              <v-col cols="1"
-                ><v-btn @click="increment" icon class="pos_buttons"
-                  >+</v-btn
-                ></v-col
-              >
             </v-row>
           </v-container>
           <v-list-item-subtitle style="text-align: center; padding: 10px 0"
             >CURRENT POSITION:
-            {{
-              motor.real_pos ? `${motor.real_pos} mm` : "Unknown"
-            }}</v-list-item-subtitle
+            {{ motor.real_pos ? `${motor.real_pos} mm` : "Unknown" }}
+            <v-icon align="center" color="red">{{
+              mdiAlertOctagon
+            }}</v-icon></v-list-item-subtitle
           >
           <v-row style="margin: 12px 0">
             <v-col>
@@ -70,52 +86,73 @@
 </template>
 
 <script>
+import { mdiCogClockwise, mdiAlertOctagon } from "@mdi/js";
+
+function encode(str) {
+  return Uint8Array.from(Array.from(str).map((letter) => letter.charCodeAt(0)));
+}
 export default {
   name: "Controls",
   props: ["motor"],
   data: () => ({
     step: 1,
     des_pos: 0,
+    mdiCogClockwise,
+    mdiAlertOctagon,
   }),
   methods: {
     async apply_position() {
-      try {
-        await this.motor.characteristic.writeValueWithoutResponse(
-          Uint8Array.from(
-            Array.from(this.des_pos).map((letter) => letter.charCodeAt(0))
-          )
-        );
-      } catch (error) {
-        alert(error);
-      }
-    },
-    increment() {
-      this.des_pos = (parseFloat(this.des_pos) + parseFloat(this.step)).toFixed(
-        5
+      await this.motor.characteristic.writeValueWithoutResponse(
+        encode(this.des_pos)
       );
-      this.apply_position();
     },
-    decrement() {
-      this.des_pos = (parseFloat(this.des_pos) - parseFloat(this.step)).toFixed(
-        5
-      );
-      this.apply_position();
+    async step_motor(signal) {
+      const descriptor = await this.motor.characteristic.getDescriptor(10515);
+      await descriptor.writeValue(encode(`${signal}${this.step}`));
+    },
+    async position_changed(event) {
+      this.$emit("position", this.dataview_to_string(event.target.value));
+    },
+    async movn_changed(event) {
+      this.$emit("movn", this.dataview_to_string(event.target.value));
     },
   },
-  mounted() {
+  async mounted() {
     this.des_pos = this.motor.desired_pos;
+    await this.motor.characteristic.addEventListener(
+      "characteristicvaluechanged",
+      this.position_changed
+    );
+
+    await this.motor.movn_char.addEventListener(
+      "characteristicvaluechanged",
+      this.movn_changed
+    );
   },
 };
 </script>
 
 <style scoped>
 .col {
-  padding: 0 1px;
+  padding: 0 3px;
 }
 
 .pos_buttons {
-  width: 10px !important;
+  width: 8px !important;
   min-width: 0 !important;
-  padding: 0 13px !important;
+  padding: 0 11px !important;
+}
+
+.rotate_move {
+  animation: rotation 2s linear infinite;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }
 </style>
