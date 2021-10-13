@@ -5,7 +5,7 @@
         <v-list-item-content>
           <v-container fluid>
             <v-row>
-              <div class="text-h5 mb-4" style="margin-bottom: 0 !important">
+              <div class="text-h6 mb-4" style="margin-bottom: 0 !important">
                 {{ motor.name }}
               </div>
               <v-spacer />
@@ -20,7 +20,6 @@
               <v-col cols="1"
                 ><v-btn
                   @click="step_motor('-')"
-                  tile
                   color="indigo"
                   dark
                   class="pos_buttons"
@@ -44,7 +43,6 @@
                   dark
                   class="pos_buttons"
                   style="margin-right: 10px"
-                  tile
                   >+</v-btn
                 ></v-col
               >
@@ -64,24 +62,18 @@
               </v-col>
             </v-row>
           </v-container>
-          <v-list-item-subtitle style="text-align: center; padding: 10px 0"
-            >CURRENT POSITION:
+          <span class="text-h7" style="text-align: center; padding: 10px 0">
             {{ motor.real_pos ? `${motor.real_pos} mm` : "Unknown" }}
             <v-icon align="center" color="red" v-show="motor.lvio">{{
               mdiAlertOctagon
-            }}</v-icon></v-list-item-subtitle
+            }}</v-icon></span
           >
           <v-row style="margin: 12px 0">
             <v-col>
-              <v-btn outlined width="100%" color="red"> Stop </v-btn>
+              <v-btn width="100%" dark color="red" @click="stop"> Stop </v-btn>
             </v-col>
             <v-col>
-              <v-btn
-                @click="apply_position"
-                width="100%"
-                outlined
-                color="indigo"
-              >
+              <v-btn @click="apply_position" width="100%" dark color="indigo">
                 Move
               </v-btn>
             </v-col>
@@ -124,11 +116,19 @@ export default {
       await descriptor.writeValue(encode(`${signal}${this.step}`));
       this.update_lvio();
     },
-    async position_changed(event) {
+    position_changed(event) {
       this.$emit("position", this.dataview_to_string(event.target.value));
     },
-    async movn_changed(event) {
+    movn_changed(event) {
       this.$emit("movn", this.dataview_to_string(event.target.value));
+    },
+    async stop() {
+      try {
+        const descriptor = await this.motor.characteristic.getDescriptor(10517);
+        await descriptor.writeValue(encode("1"));
+      } catch (error) {
+        alert(error);
+      }
     },
   },
   async mounted() {
