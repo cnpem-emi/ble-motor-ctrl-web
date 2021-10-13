@@ -46,6 +46,9 @@
         <v-btn text href="https://www.bromite.org/">
           <v-icon> {{ mdiWeb }} </v-icon> Bromite
         </v-btn>
+        <v-btn text href="https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055">
+          <v-icon> {{ mdiWeb }} </v-icon> Bluefy (iOS)
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
