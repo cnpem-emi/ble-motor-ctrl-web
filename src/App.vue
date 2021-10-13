@@ -100,8 +100,9 @@ export default {
         let characteristics = await bluetooth.service.getCharacteristics();
 
         for (let c of characteristics) {
-          if (c.uuid.substring(0, 9) > "0000000a") continue;
-          if (c.uuid.substring(0, 9) < "00000006") {
+          const char_type = c.uuid.substring(9, 13);
+          if (char_type !== "710e" && char_type !== "710f") continue;
+          if (char_type === "710e") {
             const d_desc = await c.getDescriptor(10512);
             const d_pos = await c.getDescriptor(10513);
             const d_pv = await c.getDescriptor(10514);
@@ -121,9 +122,9 @@ export default {
               desired_pos: this.dataview_to_string(des_pos),
               lvio: this.dataview_to_string(lvio) === "1",
             });
-          } else if (c.uuid.substring(0, 9) < "0000000a") {
+          } else if (char_type === "710f") {
             const movn = await c.readValue();
-            const index = parseInt(c.uuid.charAt(7)) - 6;
+            const index = parseInt(c.uuid.charAt(7))-2;
 
             bluetooth.motors[index]["movn"] =
               this.dataview_to_string(movn) === "1";
