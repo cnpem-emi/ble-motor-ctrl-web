@@ -16,6 +16,7 @@
         v-bind:motor="motor"
         @position="update_position(motor, $event)"
         @movn="update_moving(motor, $event)"
+        @lvio="update_lvio(motor, $event)"
       />
     </v-list>
     <v-bottom-navigation
@@ -104,10 +105,12 @@ export default {
             const d_desc = await c.getDescriptor(10512);
             const d_pos = await c.getDescriptor(10513);
             const d_pv = await c.getDescriptor(10514);
+            const d_lvio = await c.getDescriptor(10516);
 
             const desc = await d_desc.readValue();
             const position = await c.readValue();
             const des_pos = await d_pos.readValue();
+            const lvio = await d_lvio.readValue();
             const pv = await d_pv.readValue();
 
             bluetooth.motors.push({
@@ -116,6 +119,7 @@ export default {
               characteristic: c,
               real_pos: this.dataview_to_string(position),
               desired_pos: this.dataview_to_string(des_pos),
+              lvio: this.dataview_to_string(lvio) === "1",
             });
           } else if (c.uuid.substring(0, 9) < "0000000a") {
             const movn = await c.readValue();
@@ -132,11 +136,14 @@ export default {
       }
       this.loading = false;
     },
-    async update_position(motor, value) {
+    update_position(motor, value) {
       motor.real_pos = value;
     },
-    async update_moving(motor, value) {
+    update_moving(motor, value) {
       motor.movn = value === "1";
+    },
+    update_lvio(motor, value) {
+      motor.lvio = value;
     },
   },
 };

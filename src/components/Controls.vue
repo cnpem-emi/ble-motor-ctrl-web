@@ -6,7 +6,7 @@
           <v-container fluid>
             <v-row>
               <div class="text-h5 mb-4" style="margin-bottom: 0 !important">
-                {{ motor.pv }}
+                {{ motor.name }}
               </div>
               <v-spacer />
               <v-icon v-show="motor.movn" color="blue" class="rotate_move">{{
@@ -14,20 +14,24 @@
               }}</v-icon>
             </v-row>
           </v-container>
-          <div class="text-overline mb-5">{{ motor.name }}</div>
+          <div class="text-h7 mb-5">{{ motor.pv }}</div>
           <v-container fluid>
             <v-row align="center">
               <v-col cols="1"
-                ><v-btn @click="step_motor('-')" icon class="pos_buttons"
+                ><v-btn
+                  @click="step_motor('-')"
+                  tile
+                  color="indigo"
+                  dark
+                  class="pos_buttons"
                   >-</v-btn
                 ></v-col
               >
               <v-col cols="4">
                 <v-text-field
-                  label="Step"
+                  label="Step (mm)"
                   placeholder="Eg.: 2.00000"
                   v-model="step"
-                  outlined
                   dense
                   type="number"
                   hide-details
@@ -36,16 +40,18 @@
               <v-col cols="1"
                 ><v-btn
                   @click="step_motor('')"
-                  icon
+                  color="indigo"
+                  dark
                   class="pos_buttons"
                   style="margin-right: 10px"
+                  tile
                   >+</v-btn
                 ></v-col
               >
               <v-spacer />
               <v-col cols="5">
                 <v-text-field
-                  label="Position"
+                  label="Position (mm)"
                   placeholder="Eg.: 12.00000"
                   v-model="des_pos"
                   :step="parseFloat(step)"
@@ -53,6 +59,7 @@
                   dense
                   type="number"
                   hide-details
+                  append
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -60,7 +67,7 @@
           <v-list-item-subtitle style="text-align: center; padding: 10px 0"
             >CURRENT POSITION:
             {{ motor.real_pos ? `${motor.real_pos} mm` : "Unknown" }}
-            <v-icon align="center" color="red">{{
+            <v-icon align="center" color="red" v-show="motor.lvio">{{
               mdiAlertOctagon
             }}</v-icon></v-list-item-subtitle
           >
@@ -75,7 +82,7 @@
                 outlined
                 color="indigo"
               >
-                Apply
+                Move
               </v-btn>
             </v-col>
           </v-row>
@@ -101,14 +108,21 @@ export default {
     mdiAlertOctagon,
   }),
   methods: {
+    async update_lvio() {
+      const d_lvio = await this.motor.characteristic.getDescriptor(10516);
+      const lvio = await d_lvio.readValue();
+      this.$emit("lvio", this.dataview_to_string(lvio) == "1");
+    },
     async apply_position() {
       await this.motor.characteristic.writeValueWithoutResponse(
         encode(this.des_pos)
       );
+      this.update_lvio();
     },
     async step_motor(signal) {
       const descriptor = await this.motor.characteristic.getDescriptor(10515);
       await descriptor.writeValue(encode(`${signal}${this.step}`));
+      this.update_lvio();
     },
     async position_changed(event) {
       this.$emit("position", this.dataview_to_string(event.target.value));
