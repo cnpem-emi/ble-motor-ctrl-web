@@ -24,6 +24,7 @@
       background-color="indigo"
       dark
     >
+      <PV v-bind:pv="pv"/>
       <v-btn v-if="!$store.state.bluetooth.device" @click="toggle_bluetooth">
         <span>Connect</span>
         <v-icon>{{ mdiBluetoothConnect }}</v-icon>
@@ -59,6 +60,7 @@ export default {
     loading_color: "blue",
     unsupported: false,
     lock: true,
+    pv: {}
   }),
   methods: {
     async toggle_bluetooth() {
@@ -129,6 +131,12 @@ export default {
             bluetooth.motors[index]["movn"] =
               this.dataview_to_string(movn) === "1";
             bluetooth.motors[index]["movn_char"] = c;
+          } else if (char_type === "7110") { 
+            this.pv = {
+              characteristic: c,
+              name: await c.readValue(),
+              value: "Waiting..."
+            }
           }
           await c.startNotifications();
         }
