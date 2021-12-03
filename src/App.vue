@@ -24,7 +24,9 @@
       background-color="indigo"
       dark
     >
-      <PV v-bind:pv="pv"/>
+      <PV v-if="pv.name" style="width: 80%" v-bind:pv="pv" />
+      <Edit v-if="pv.name" @change_pv="change_pv($event)" />
+
       <v-btn v-if="!$store.state.bluetooth.device" @click="toggle_bluetooth">
         <span>Connect</span>
         <v-icon>{{ mdiBluetoothConnect }}</v-icon>
@@ -40,16 +42,24 @@
 
 <script>
 import Controls from "./components/Controls";
+import PV from "./components/PV.vue";
 import Unsupported from "./components/Unsupported.vue";
+import Edit from "./components/Edit.vue";
 import { mdiBluetoothOff, mdiBluetoothConnect, mdiHelpRhombus } from "@mdi/js";
 
 const SERVICE_UUID = "84e7f883-7c80-4b64-88a5-6077ce2e8925";
+//pv.name
+function encode(str) {
+  return Uint8Array.from(Array.from(str).map((letter) => letter.charCodeAt(0)));
+}
 
 export default {
   name: "BLEMotorCtrl",
   components: {
     Controls,
     Unsupported,
+    PV,
+    Edit,
   },
   data: () => ({
     real_positions: [],
@@ -60,7 +70,7 @@ export default {
     loading_color: "blue",
     unsupported: false,
     lock: true,
-    pv: {}
+    pv: {},
   }),
   methods: {
     async toggle_bluetooth() {
@@ -73,6 +83,7 @@ export default {
       if (this.$store.state.bluetooth.device) {
         await this.$store.state.bluetooth.device.gatt.disconnect();
         this.$store.commit("disconnect_bluetooth");
+        this.pv = {};
       } else {
         let manufacturerData = { companyIdentifier: 13 };
 
@@ -103,7 +114,6 @@ export default {
 
         for (let c of characteristics) {
           const char_type = c.uuid.substring(9, 13);
-          if (char_type !== "710e" && char_type !== "710f") continue;
           if (char_type === "710e") {
             const d_desc = await c.getDescriptor(10512);
             const d_pos = await c.getDescriptor(10513);
@@ -126,17 +136,22 @@ export default {
             });
           } else if (char_type === "710f") {
             const movn = await c.readValue();
-            const index = parseInt(c.uuid.charAt(7))-2;
+            const index = parseInt(c.uuid.charAt(7)) - 2;
 
             bluetooth.motors[index]["movn"] =
               this.dataview_to_string(movn) === "1";
             bluetooth.motors[index]["movn_char"] = c;
-          } else if (char_type === "7110") { 
+          } else if (char_type === "7110") {
             this.pv = {
               characteristic: c,
-              name: await c.readValue(),
-              value: "Waiting..."
-            }
+              name: this.dataview_to_string(await c.readValue()),
+              value: "Waiting...",
+            };
+
+            await c.addEventListener(
+              "characteristicvaluechanged",
+              this.update_pv
+            );
           }
           await c.startNotifications();
         }
@@ -153,6 +168,14 @@ export default {
     },
     update_lvio(motor, value) {
       motor.lvio = value;
+    },
+    update_pv(event) {
+      this.pv.value = this.dataview_to_string(event.target.value);
+    },
+    async change_pv(event) {
+      this.pv.name = event;
+      this.pv.value = "Waiting...";
+      await this.pv.characteristic.writeValue(encode(event));
     },
   },
 };
